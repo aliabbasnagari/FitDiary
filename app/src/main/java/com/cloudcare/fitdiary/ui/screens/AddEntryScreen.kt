@@ -1,6 +1,5 @@
 package com.cloudcare.fitdiary.ui.screens
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,11 +21,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.cloudcare.fitdiary.data.model.HealthEntry
 import com.cloudcare.fitdiary.data.repository.HealthRepository
+import com.cloudcare.fitdiary.data.repository.MockHealthRepository
+import com.cloudcare.fitdiary.ui.theme.FitDiaryTheme
 import java.time.LocalDate
 
 @Composable
-fun AddEntryScreen() {
-    val repository = HealthRepository()
+fun AddEntryScreen(repository: HealthRepository) {
     var waterIntake by remember { mutableStateOf("") }
     var sleepHours by remember { mutableStateOf("") }
     var steps by remember { mutableStateOf("") }
@@ -38,7 +39,7 @@ fun AddEntryScreen() {
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Add Health Entry", style = MaterialTheme.typography.headlineMedium)
+        Text("Add Health Entry asd", style = MaterialTheme.typography.headlineMedium)
         OutlinedTextField(
             value = waterIntake,
             onValueChange = { waterIntake = it },
@@ -88,8 +89,18 @@ fun AddEntryScreen() {
     }
 }
 
+
 @Preview(showBackground = true)
 @Composable
 fun AddEntryScreenPreview() {
-    AddEntryScreen()
+    FitDiaryTheme {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            AddEntryScreen(
+                repository = MockHealthRepository()
+            )
+        }
+    }
 }
