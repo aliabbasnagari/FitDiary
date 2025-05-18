@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,9 +17,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.cloudcare.fitdiary.data.model.HealthEntry
 import com.cloudcare.fitdiary.data.repository.HealthRepository
+import com.cloudcare.fitdiary.data.repository.MockHealthRepository
+import com.cloudcare.fitdiary.ui.components.HealthListItem
 import java.time.LocalDate
 
 
@@ -51,9 +55,10 @@ fun HistoryScreen(healthRepository: HealthRepository) {
                 Text("Next Week")
             }
         }
-        LazyColumn {
+        LazyColumn(modifier = Modifier.weight(1f)) {
             items(entries) { entry ->
-                Text("${entry.date}: Water=${entry.waterIntake}ml, Steps=${entry.steps}")
+                HealthListItem(entry)
+                HorizontalDivider()
             }
         }
         Button(onClick = { exportToCSV(entries) }) {
@@ -69,4 +74,10 @@ fun exportToCSV(entries: List<HealthEntry>) {
         csvContent.append("${entry.date},${entry.waterIntake},${entry.sleepHours},${entry.steps},${entry.mood},${entry.weight}\n")
     }
     // Save to file (requires storage permissions)
+}
+
+@Preview(showBackground = true)
+@Composable
+fun HistoryScreenPreview() {
+    HistoryScreen(healthRepository = MockHealthRepository())
 }
