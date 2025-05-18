@@ -1,6 +1,5 @@
 package com.cloudcare.fitdiary.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,7 +25,7 @@ import com.cloudcare.fitdiary.ui.theme.FitDiaryTheme
 import java.time.LocalDate
 
 @Composable
-fun AddEntryScreen(repository: HealthRepository) {
+fun AddEntryScreen(healthRepository: HealthRepository) {
     var waterIntake by remember { mutableStateOf("") }
     var sleepHours by remember { mutableStateOf("") }
     var steps by remember { mutableStateOf("") }
@@ -39,41 +38,36 @@ fun AddEntryScreen(repository: HealthRepository) {
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Add Health Entry asd", style = MaterialTheme.typography.headlineMedium)
-        OutlinedTextField(
-            value = waterIntake,
-            onValueChange = { waterIntake = it },
-            label = { Text("Water Intake (ml)") },
-        )
-        OutlinedTextField(
-            value = sleepHours,
-            onValueChange = { sleepHours = it },
-            label = { Text("Sleep Hours") }
-        )
-        OutlinedTextField(
-            value = steps,
-            onValueChange = { steps = it },
-            label = { Text("Steps") }
-        )
-        // Mood Picker
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.padding(8.dp)
-        ) {
-            listOf("😊", "😐", "😔").forEach { emoji ->
-                Button(onClick = { mood = emoji }) {
-                    Text(emoji)
+        Column(modifier = Modifier.weight(1f)) {
+            Text("Add Health Entry", style = MaterialTheme.typography.headlineMedium)
+            OutlinedTextField(
+                value = waterIntake,
+                onValueChange = { waterIntake = it },
+                label = { Text("Water Intake (ml)") }
+            )
+            OutlinedTextField(
+                value = sleepHours,
+                onValueChange = { sleepHours = it },
+                label = { Text("Sleep Hours") }
+            )
+            OutlinedTextField(
+                value = steps,
+                onValueChange = { steps = it },
+                label = { Text("Steps") }
+            )
+            Row {
+                listOf("😊", "😐", "😔").forEach { emoji ->
+                    Button(onClick = { mood = emoji }) {
+                        Text(emoji)
+                    }
                 }
             }
-        }
-        OutlinedTextField(
-            value = weight,
-            onValueChange = { weight = it },
-            label = { Text("Weight (kg)") }
-        )
-        Button(
-            modifier = Modifier.padding(8.dp),
-            onClick = {
+            OutlinedTextField(
+                value = weight,
+                onValueChange = { weight = it },
+                label = { Text("Weight (kg)") }
+            )
+            Button(onClick = {
                 val entry = HealthEntry(
                     date = LocalDate.now().toString(),
                     waterIntake = waterIntake.toFloatOrNull() ?: 0f,
@@ -82,9 +76,14 @@ fun AddEntryScreen(repository: HealthRepository) {
                     mood = mood,
                     weight = weight.toFloatOrNull() ?: 0f
                 )
-                repository.saveHealthEntry(entry, {}, {})
+                healthRepository.saveHealthEntry(
+                    entry,
+                    { /*Handle Success */ },
+                    { /* Handle error */ }
+                )
             }) {
-            Text("Save Entry")
+                Text("Save Entry")
+            }
         }
     }
 }
@@ -99,7 +98,7 @@ fun AddEntryScreenPreview() {
             color = MaterialTheme.colorScheme.background
         ) {
             AddEntryScreen(
-                repository = MockHealthRepository()
+                healthRepository = MockHealthRepository()
             )
         }
     }

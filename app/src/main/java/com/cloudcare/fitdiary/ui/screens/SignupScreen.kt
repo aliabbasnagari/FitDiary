@@ -29,15 +29,15 @@ import com.cloudcare.fitdiary.data.repository.AuthRepository
 import com.cloudcare.fitdiary.data.repository.MockAuthRepository
 import kotlinx.coroutines.launch
 
-
 @Composable
-fun LoginScreen(
+fun SignupScreen(
     navController: NavController,
     authRepository: AuthRepository,
-    onLoginSuccess: () -> Unit
+    onSignupSuccess: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
 
@@ -48,7 +48,7 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Login", style = MaterialTheme.typography.headlineMedium)
+        Text("Sign Up", style = MaterialTheme.typography.headlineMedium)
         Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextField(
             value = email,
@@ -64,31 +64,43 @@ fun LoginScreen(
             visualTransformation = PasswordVisualTransformation(),
             modifier = Modifier.fillMaxWidth()
         )
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(
+            value = confirmPassword,
+            onValueChange = { confirmPassword = it },
+            label = { Text("Confirm Password") },
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth()
+        )
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {
-                coroutineScope.launch {
-                    try {
-                        authRepository.login(email, password).getOrThrow()
-                        onLoginSuccess()
-                        navController.navigate("dashboard") {
-                            popUpTo("login") { inclusive = true }
+                if (password == confirmPassword) {
+                    coroutineScope.launch {
+                        try {
+                            authRepository.signup(email, password).getOrThrow()
+                            onSignupSuccess()
+                            navController.navigate("dashboard") {
+                                popUpTo("signup") { inclusive = true }
+                            }
+                        } catch (e: Exception) {
+                            errorMessage = e.message
                         }
-                    } catch (e: Exception) {
-                        errorMessage = e.message
                     }
+                } else {
+                    errorMessage = "Passwords do not match"
                 }
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Login")
+            Text("Sign Up")
         }
         Spacer(modifier = Modifier.height(8.dp))
         TextButton(
-            onClick = { navController.navigate("signup") },
+            onClick = { navController.navigate("login") },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Don't have an account? Sign up")
+            Text("Already have an account? Login")
         }
         errorMessage?.let {
             Spacer(modifier = Modifier.height(8.dp))
@@ -97,9 +109,8 @@ fun LoginScreen(
     }
 }
 
-
 @Preview(showBackground = true)
 @Composable
-fun LoginScreenPreview() {
-    LoginScreen(navController = rememberNavController(), authRepository = MockAuthRepository()) { }
+fun SignupScreenPreview() {
+    SignupScreen(navController = rememberNavController(), authRepository = MockAuthRepository()) { }
 }
