@@ -1,5 +1,6 @@
 package com.cloudcare.fitdiary.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,10 +20,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.cloudcare.fitdiary.data.model.HealthEntry
+import com.cloudcare.fitdiary.data.repository.HealthRepository
 import java.time.LocalDate
 
 @Composable
 fun AddEntryScreen() {
+    val repository = HealthRepository()
     var waterIntake by remember { mutableStateOf("") }
     var sleepHours by remember { mutableStateOf("") }
     var steps by remember { mutableStateOf("") }
@@ -78,6 +81,7 @@ fun AddEntryScreen() {
                     mood = mood,
                     weight = weight.toFloatOrNull() ?: 0f
                 )
+                repository.saveHealthEntry(entry, {}, {})
             }) {
             Text("Save Entry")
         }
@@ -86,6 +90,6 @@ fun AddEntryScreen() {
 
 @Preview(showBackground = true)
 @Composable
-fun AddEntryScreenPreview(){
+fun AddEntryScreenPreview() {
     AddEntryScreen()
 }
