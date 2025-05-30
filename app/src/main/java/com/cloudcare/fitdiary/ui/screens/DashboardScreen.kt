@@ -3,7 +3,6 @@ package com.cloudcare.fitdiary.ui.screens
 import MyBarChart
 import MyLineChart
 import MyPieChart
-import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -20,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -33,7 +33,6 @@ import com.cloudcare.fitdiary.data.model.SettingsDataStore
 import com.cloudcare.fitdiary.data.repository.HealthRepository
 import com.cloudcare.fitdiary.ui.components.HealthStats
 import com.cloudcare.fitdiary.ui.components.HorizontalChartPager
-import com.github.mikephil.charting.data.PieEntry
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.util.Locale
@@ -43,21 +42,15 @@ import java.util.Locale
 fun DashboardScreen(healthRepository: HealthRepository) {
     val context = LocalContext.current
     val settings = remember { SettingsDataStore(context) }
-    var chartMode = remember { ChartMode.HORIZONTAL }
 
-    LaunchedEffect(Unit) {
-        settings.getChartMode.collect { mode ->
-            chartMode = mode
-            Log.d("Settings", "Mode Enabled: ${mode.name}")
-        }
+    val chartModeState = produceState(initialValue = ChartMode.HORIZONTAL) {
+        settings.getChartMode.collect { value = it }
     }
 
     val today = LocalDate.now().toString()
     var entry by remember { mutableStateOf<HealthEntry?>(null) }
     var entries by remember { mutableStateOf<List<HealthEntry>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
-    var startDate by remember { mutableStateOf(LocalDate.now().minusDays(30)) }
-    var endDate by remember { mutableStateOf(LocalDate.now()) }
     val scrollState = rememberScrollState()
 
     LaunchedEffect(Unit) {
@@ -69,8 +62,8 @@ fun DashboardScreen(healthRepository: HealthRepository) {
         })
 
         healthRepository.getHealthEntries(
-            startDate.toString(),
-            endDate.toString(),
+            LocalDate.now().minusDays(30).toString(),
+            LocalDate.now().toString(),
             {
                 entries = it
                 isLoading = false
@@ -128,11 +121,6 @@ fun DashboardScreen(healthRepository: HealthRepository) {
             val sleepValues = entries.map { entry -> entry.sleepHours }
             val stepValues = entries.map { entry -> entry.steps.toFloat() }
             val moodValues = entries.map { entry -> entry.mood }
-
-            val moodValues2 = entries.groupingBy { it.mood }.eachCount().map { (mood, count) ->
-                PieEntry(count.toFloat(), mood)
-            }
-
 
             val pages = listOf<@Composable () -> Unit>(
                 {
@@ -196,7 +184,7 @@ fun DashboardScreen(healthRepository: HealthRepository) {
             )
 
             when {
-                chartMode == ChartMode.HORIZONTAL -> {
+                chartModeState.value == ChartMode.HORIZONTAL -> {
                     HorizontalChartPager(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -205,7 +193,7 @@ fun DashboardScreen(healthRepository: HealthRepository) {
                     )
                 }
 
-                chartMode == ChartMode.VERTICAL -> {
+                else -> {
                     for (page in pages) {
                         page()
                     }

@@ -59,7 +59,7 @@ fun AppNavigation(navController: NavHostController, modifier: Modifier) {
         }
         composable("settings") {
 
-            SettingsScreen(authRepository)
+            SettingsScreen(navController, authRepository)
         }
     }
 }

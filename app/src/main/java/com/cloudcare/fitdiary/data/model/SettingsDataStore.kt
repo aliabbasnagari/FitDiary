@@ -1,6 +1,7 @@
 package com.cloudcare.fitdiary.data.model
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -16,6 +17,7 @@ class SettingsDataStore(private val context: Context) {
     }
 
     suspend fun setThemeMode(mode: ThemeMode) {
+        Log.d("SET", mode.name)
         context.dataStore.edit { preferences ->
             preferences[THEME_MODE] = mode.name
         }
@@ -33,7 +35,7 @@ class SettingsDataStore(private val context: Context) {
 
     suspend fun setChartMode(mode: ChartMode) {
         context.dataStore.edit { preferences ->
-            preferences[THEME_MODE] = mode.name
+            preferences[CHART_MODE] = mode.name
         }
     }
 
