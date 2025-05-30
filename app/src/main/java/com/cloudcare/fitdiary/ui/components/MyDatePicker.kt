@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,6 +38,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyDatePicker(
+    modifier: Modifier = Modifier,
     title: String,
     initialDate: LocalDate = LocalDate.now(),
     lowerBound: LocalDate? = null,
@@ -62,12 +64,11 @@ fun MyDatePicker(
     }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .padding(4.dp),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         Row(
             modifier = Modifier
                 .clickable { showDialog = true }
@@ -75,7 +76,7 @@ fun MyDatePicker(
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(8.dp)
                 )
-                .padding(8.dp),
+                .padding(8.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {

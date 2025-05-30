@@ -2,6 +2,9 @@ package com.cloudcare.fitdiary.ui.screens
 
 import android.content.ContentValues
 import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.pdf.PdfDocument
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
@@ -14,8 +17,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,11 +44,12 @@ import com.cloudcare.fitdiary.data.repository.HealthRepository
 import com.cloudcare.fitdiary.data.repository.MockHealthRepository
 import com.cloudcare.fitdiary.ui.components.HealthListItem
 import com.cloudcare.fitdiary.ui.components.MyDatePicker
+import java.io.IOException
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(healthRepository: HealthRepository) {
     val context = LocalContext.current
@@ -47,6 +57,7 @@ fun HistoryScreen(healthRepository: HealthRepository) {
     var startDate by remember { mutableStateOf(LocalDate.now().minusDays(30)) }
     var endDate by remember { mutableStateOf(LocalDate.now()) }
     var isLoading by remember { mutableStateOf(true) }
+    var expanded by remember { mutableStateOf(false) }
 
 
     LaunchedEffect(startDate, endDate) {
@@ -66,17 +77,57 @@ fun HistoryScreen(healthRepository: HealthRepository) {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text("Health History", style = MaterialTheme.typography.headlineMedium)
         Row {
-            MyDatePicker(title = "From", initialDate = startDate, onDateSelected = { date ->
-                startDate = date?.let {
-                    Instant.ofEpochMilli(it)
-                        .atZone(ZoneId.systemDefault())
-                        .toLocalDate()
+            Text(
+                "Health History",
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.headlineMedium
+            )
+            Box {
+                IconButton(onClick = { expanded = true }) {
+                    Icon(imageVector = Icons.Default.MoreVert, contentDescription = "Menu")
                 }
-            })
+
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    DropdownMenuItem(
+                        onClick = {
+                            exportToCSV(entries, context)
+                            expanded = false
+                        },
+                        text = { Text("Export to CSV") },
+                    )
+
+                    DropdownMenuItem(
+                        onClick = {
+                            exportToPDF(entries, context)
+                            expanded = false
+                        },
+                        text = { Text("Export to PDF") },
+                    )
+
+                }
+            }
+        }
+
+
+        Row {
+            MyDatePicker(
+                modifier = Modifier.weight(1f),
+                title = "From",
+                initialDate = startDate,
+                onDateSelected = { date ->
+                    startDate = date?.let {
+                        Instant.ofEpochMilli(it)
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDate()
+                    }
+                })
 
             MyDatePicker(
+                modifier = Modifier.weight(1f),
                 title = "To",
                 initialDate = endDate,
                 lowerBound = startDate,
@@ -87,8 +138,9 @@ fun HistoryScreen(healthRepository: HealthRepository) {
                             .toLocalDate()
                     }
                 })
-
         }
+
+
         LazyColumn(modifier = Modifier.weight(1f)) {
             items(entries) { entry ->
                 HealthListItem(entry)
@@ -105,10 +157,6 @@ fun HistoryScreen(healthRepository: HealthRepository) {
                 CircularProgressIndicator(modifier = Modifier.size(48.dp))
             }
         }
-
-        Button(onClick = { exportToCSV(entries, context) }) {
-            Text("Export to CSV")
-        }
     }
 }
 
@@ -121,6 +169,79 @@ fun exportToCSV(entries: List<HealthEntry>, context: Context) {
     }
     // Save to file (requires storage permissions)
     saveFileToDownloads(context, "health_data.csv", csvContent.toString())
+}
+
+
+fun exportToPDF(entries: List<HealthEntry>, context: Context) {
+    val pdfDocument = PdfDocument()
+    val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // A4 size
+    val page = pdfDocument.startPage(pageInfo)
+    val canvas: Canvas = page.canvas
+
+    val paint = Paint().apply {
+        textSize = 12f
+        isAntiAlias = true
+    }
+
+    val startX = 10f
+    var startY = 25f
+    val lineHeight = 20f
+
+    // Header
+    paint.isFakeBoldText = true
+    canvas.drawText("Date", startX, startY, paint)
+    canvas.drawText("WaterIntake", startX + 80, startY, paint)
+    canvas.drawText("SleepHours", startX + 180, startY, paint)
+    canvas.drawText("Steps", startX + 280, startY, paint)
+    canvas.drawText("Mood", startX + 360, startY, paint)
+    canvas.drawText("Weight", startX + 440, startY, paint)
+
+    paint.isFakeBoldText = false
+    startY += lineHeight
+
+    // Data rows
+    entries.forEach { entry ->
+        canvas.drawText(entry.date, startX, startY, paint)
+        canvas.drawText(entry.waterIntake.toString(), startX + 80, startY, paint)
+        canvas.drawText(entry.sleepHours.toString(), startX + 180, startY, paint)
+        canvas.drawText(entry.steps.toString(), startX + 280, startY, paint)
+        canvas.drawText(entry.mood, startX + 360, startY, paint)
+        canvas.drawText(entry.weight.toString(), startX + 440, startY, paint)
+        startY += lineHeight
+    }
+
+    pdfDocument.finishPage(page)
+
+    try {
+        val contentValues = ContentValues().apply {
+            put(MediaStore.Downloads.DISPLAY_NAME, "health_data.pdf")
+            put(MediaStore.Downloads.MIME_TYPE, "application/pdf")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+            }
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+
+            val uri = context.contentResolver.insert(
+                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                contentValues
+            )
+
+            uri?.let {
+                context.contentResolver.openOutputStream(it).use { outputStream ->
+                    pdfDocument.writeTo(outputStream!!)
+                    Toast.makeText(context, "PDF saved to Downloads", Toast.LENGTH_SHORT).show()
+                }
+            } ?: run {
+                Toast.makeText(context, "Failed to create PDF file", Toast.LENGTH_SHORT).show()
+            }
+        }
+    } catch (e: IOException) {
+        e.printStackTrace()
+        Toast.makeText(context, "Error saving PDF: ${e.message}", Toast.LENGTH_SHORT).show()
+    } finally {
+        pdfDocument.close()
+    }
 }
 
 fun saveFileToDownloads(context: Context, fileName: String, content: String) {
