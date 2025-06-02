@@ -4,6 +4,7 @@ import MyBarChart
 import MyLineChart
 import MyPieChart
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,7 +12,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -28,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.cloudcare.fitdiary.data.model.ChartMode
+import com.cloudcare.fitdiary.data.model.ChartSpan
 import com.cloudcare.fitdiary.data.model.HealthEntry
 import com.cloudcare.fitdiary.data.model.SettingsDataStore
 import com.cloudcare.fitdiary.data.repository.HealthRepository
@@ -53,6 +58,22 @@ fun DashboardScreen(healthRepository: HealthRepository) {
     var isLoading by remember { mutableStateOf(true) }
     val scrollState = rememberScrollState()
 
+    produceState(initialValue = ChartSpan.MONTH) {
+        settings.getChartSpan.collect { chartSpan ->
+            value = chartSpan
+            val days = if (chartSpan == ChartSpan.MONTH) 30L else 7L;
+            healthRepository.getHealthEntries(
+                LocalDate.now().minusDays(days).toString(),
+                LocalDate.now().toString(),
+                {
+                    entries = it
+                    isLoading = false
+                },
+                { isLoading = false }
+            )
+        }
+    }
+
     LaunchedEffect(Unit) {
         healthRepository.getHealthEntries(today, today, { entries ->
             entry = entries.firstOrNull()
@@ -60,16 +81,6 @@ fun DashboardScreen(healthRepository: HealthRepository) {
         }, {
             isLoading = false
         })
-
-        healthRepository.getHealthEntries(
-            LocalDate.now().minusDays(30).toString(),
-            LocalDate.now().toString(),
-            {
-                entries = it
-                isLoading = false
-            },
-            { isLoading = false }
-        )
     }
 
     Column(
@@ -86,7 +97,22 @@ fun DashboardScreen(healthRepository: HealthRepository) {
             }
 
             else -> {
-                entry?.let { HealthStats(it) } ?: Text("No data for today")
+                entry?.let { HealthStats(it) } ?: Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No data for today")
+                    }
+                }
             }
         }
 
